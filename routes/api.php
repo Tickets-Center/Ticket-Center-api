@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Broadcast;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\{
+    AccessController,
     AssignmentController,
     AuthController,
     InterventionController,
@@ -18,6 +19,17 @@ use App\Http\Controllers\{
 | Public
 |--------------------------------------------------------------------------
 */
+
+Route::get('/health', function (\Illuminate\Http\Request $request) {
+    \Log::info('health hit', [
+        'ip' => $request->ip(),
+        'ua' => $request->userAgent(),
+        'host' => $request->getHost(),
+        'referer' => $request->headers->get('referer'),
+    ]);
+    return response()->json(['status' => 'ok']);
+});
+
 Route::post('/register',            [AuthController::class, 'register']);
 Route::post('/verify-email',        [AuthController::class, 'verifyEmail']);
 Route::post('/resend-verification', [AuthController::class, 'resendVerification']);
@@ -108,6 +120,22 @@ Route::middleware(['auth:sanctum', 'role:admin'])
         Route::post('/users',              [UserController::class, 'store']);
         Route::delete('/users/{id}',       [UserController::class, 'destroy']);
         Route::patch('/users/{id}/role',   [UserController::class, 'assignRole']);
+
+        // Roles -------------------------------------------------------------
         Route::get('/roles',               [UserController::class, 'roles']);
+        Route::get('/roles/manage',        [AccessController::class, 'roleIndex']);
+        Route::post('/roles',              [AccessController::class, 'roleStore']);
+        Route::patch('/roles/{role}',      [AccessController::class, 'roleUpdate'])
+            ->whereNumber('role');
+        Route::delete('/roles/{role}',     [AccessController::class, 'roleDestroy'])
+            ->whereNumber('role');
+
+        // Permissions -------------------------------------------------------
+        Route::get('/permissions',             [AccessController::class, 'permissionIndex']);
+        Route::post('/permissions',            [AccessController::class, 'permissionStore']);
+        Route::patch('/permissions/{permission}', [AccessController::class, 'permissionUpdate'])
+            ->whereNumber('permission');
+        Route::delete('/permissions/{permission}', [AccessController::class, 'permissionDestroy'])
+            ->whereNumber('permission');
     });
 
